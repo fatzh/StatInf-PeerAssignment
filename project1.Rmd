@@ -81,7 +81,9 @@ cum_means <- cumsum(sample_means) / (1:nb_obs)
 g <- ggplot(data.frame(x=1:nb_obs, y=cum_means), aes(x=x, y=y))
 g <- g + geom_hline(yintercept = theoritical_mean, color="red")
 g <- g + geom_line(color="blue")
-g <- g + labs(title = "Mean of sample means as number of simulations increases", x = "Number of simulations", y = "Mean")
+g <- g + labs(title = "Mean of sample means as number of simulations increases",
+              x = "Number of simulations",
+              y = "Mean")
 g <- g + theme_bw()
 g <- g + scale_x_log10()
 g
@@ -110,7 +112,9 @@ for (i in 2:nb_obs) {
 g2 <- ggplot(data.frame(x=1:(nb_obs-1), y=vars), aes(x=x, y=y))
 g2 <- g2 + geom_hline(yintercept = theoritical_var, color="red")
 g2 <- g2 + geom_line(color="blue")
-g2 <- g2 + labs(title = "Variance of the means as number of simulations increases", x = "Number of simulations", y = "Variance")
+g2 <- g2 + labs(title = "Variance of the means as number of simulations increases",
+                x = "Number of simulations",
+                y = "Variance")
 g2 <- g2 + theme_bw()
 g2 <- g2 + scale_x_log10()
 g2
@@ -128,18 +132,23 @@ To show this, let's draw the distribution of the means with different number of 
 data <- NULL
 # let's build the samples for 10, 100, 1000, 10000 and 100 000 observations
 data <- rbind(
-    data.frame(obs=10, x=sample_means[1:10]),
-    data.frame(obs=100, x=sample_means[1:100]),
-    data.frame(obs=1000, x=sample_means[1:1000]),
-    data.frame(obs=10000, x=sample_means[1:10000]),
-    data.frame(obs=100000, x=sample_means[1:100000])
+    data.frame(obs=rep(10, each=10), x=sample_means[1:10]),
+    data.frame(obs=rep(100, each=100), x=sample_means[1:100]),
+    data.frame(obs=rep(1000, each=1000), x=sample_means[1:1000]),
+    data.frame(obs=rep(10000, each=10000), x=sample_means[1:10000]),
+    data.frame(obs=rep(100000, each=100000), x=sample_means[1:100000])
     )
-g3 <- ggplot(data, aes(x = x)) + geom_histogram(aes(y=..density..), binwidth=.05)
+g3 <- ggplot(data, aes(x = x))
+g3 <- g3 + geom_histogram(aes(y=..density..), binwidth=.05)
 # plot normal distribution, with parameters as per the Central Limit Theorem
-g3 <- g3 + stat_function(fun = dnorm, color="red", args=list(mean=5, sd=sqrt(theoritical_var / 40)))
+g3 <- g3 + stat_function(fun = dnorm,
+                         color="red",
+                         args=list(mean=5, sd=sqrt(theoritical_var / 40)))
 # plot panel plots by number of observations
 g3 <- g3 + facet_grid(. ~ obs)
 g3
 ```
+
+## Conclusion
 
 We can see that with enough observations, the distribution of the means of the samples is close to the normal distribution as given by the Central Limit Theorem (in red).

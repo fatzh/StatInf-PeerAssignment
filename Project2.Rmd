@@ -48,8 +48,11 @@ An interesting view would be to display the relation between the tooth length an
 ```{r}
 g <- ggplot(ToothGrowth, aes(x = dose, y = len, fill = supp))
 g <- g + geom_boxplot(aes(x = dose))
-g <- g + labs(title="Effect of supplement on tooth growth", x="Dose (milligrams)", y="Tooth length")
-g <- g + scale_fill_discrete(name="Supplement", labels=c('Orange Juice', 'Vitamin C'))
+g <- g + labs(title="Effect of supplement on tooth growth",
+              x="Dose (milligrams)",
+              y="Tooth length")
+g <- g + scale_fill_discrete(name="Supplement",
+                             labels=c('Orange Juice', 'Vitamin C'))
 g <- g + facet_grid(. ~ supp)
 g
 ```
