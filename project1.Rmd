@@ -1,6 +1,6 @@
 ---
 title: "Statistical Inference Project"
-output: html_document
+output: pdf_document
 ---
 
 ```{r global_options, include=FALSE}
@@ -138,8 +138,8 @@ data <- rbind(
     data.frame(obs=rep(10000, each=10000), x=sample_means[1:10000]),
     data.frame(obs=rep(100000, each=100000), x=sample_means[1:100000])
     )
-g3 <- ggplot(data, aes(x = x))
-g3 <- g3 + geom_histogram(aes(y=..density..), binwidth=.05)
+g3 <- ggplot(data, x = x)
+g3 <- g3 + geom_histogram(aes(x = x, y=..density..), binwidth=.05)
 # plot normal distribution, with parameters as per the Central Limit Theorem
 g3 <- g3 + stat_function(fun = dnorm,
                          color="red",
