@@ -3,12 +3,7 @@ title: "Statistical Inference"
 output: html_document
 ---
 
-```{r global_options, include=FALSE}
-knitr::opts_chunk$set(warning=FALSE, message=FALSE)
-library('ggplot2')
-library('dplyr')
-data(ToothGrowth)
-```
+
 
 # Part 2
 
@@ -20,11 +15,47 @@ We will look at the dataset `ToothGrowth` which shows the response in the length
 
 First a quick look at the data:
 
-```{r}
+
+```r
 glimpse(ToothGrowth)
+```
+
+```
+## Observations: 60
+## Variables:
+## $ len  (dbl) 4.2, 11.5, 7.3, 5.8, 6.4, 10.0, 11.2, 11.2, 5.2, 7.0, 16....
+## $ supp (fctr) VC, VC, VC, VC, VC, VC, VC, VC, VC, VC, VC, VC, VC, VC, ...
+## $ dose (dbl) 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 1.0, 1....
+```
+
+```r
 summary(ToothGrowth)
+```
+
+```
+##       len        supp         dose      
+##  Min.   : 4.20   OJ:30   Min.   :0.500  
+##  1st Qu.:13.07   VC:30   1st Qu.:0.500  
+##  Median :19.25           Median :1.000  
+##  Mean   :18.81           Mean   :1.167  
+##  3rd Qu.:25.27           3rd Qu.:2.000  
+##  Max.   :33.90           Max.   :2.000
+```
+
+```r
 levels(ToothGrowth$supp)
+```
+
+```
+## [1] "OJ" "VC"
+```
+
+```r
 unique(ToothGrowth$dose)
+```
+
+```
+## [1] 0.5 1.0 2.0
 ```
 
 We can see that this dataset contains 60 observations on 3 variables :
@@ -35,7 +66,8 @@ We can see that this dataset contains 60 observations on 3 variables :
 
 The dose can only take 3 values, so we can convert it to a factor:
 
-```{r}
+
+```r
 ToothGrowth$dose <- as.factor(ToothGrowth$dose)
 ```
 
@@ -45,7 +77,8 @@ Now the dataset is ready for further analysis.
 
 An interesting view would be to display the relation between the tooth length and the dose for each supplement:
 
-```{r}
+
+```r
 g <- ggplot(ToothGrowth, aes(x = dose, y = len, fill = supp))
 g <- g + geom_boxplot(aes(x = dose))
 g <- g + labs(title="Effect of supplement on tooth growth", x="Dose (milligrams)", y="Tooth length")
@@ -53,6 +86,8 @@ g <- g + scale_fill_discrete(name="Supplement", labels=c('Orange Juice', 'Vitami
 g <- g + facet_grid(. ~ supp)
 g
 ```
+
+![plot of chunk unnamed-chunk-3](figure/unnamed-chunk-3-1.png) 
 
 We can draw the following observations from this plot:
 
@@ -75,22 +110,50 @@ $$
 
 To compare the impact of each supplement, we can perform an independant group T test.
 
-```{r}
+
+```r
 oj <- ToothGrowth[ToothGrowth$supp == 'OJ',]$len
 vc <- ToothGrowth[ToothGrowth$supp == 'VC',]$len
 ```
 
 Let's look at the variance of the 2 groups:
 
-```{r}
+
+```r
 var(oj)
+```
+
+```
+## [1] 43.63344
+```
+
+```r
 var(vc)
+```
+
+```
+## [1] 68.32723
 ```
 
 The difference is not negligible, so we'll assume the 2 groups have unequal variances for the T test.
 
-```{r}
+
+```r
 t.test(oj, vc, paired=FALSE, var.equal=FALSE)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  oj and vc
+## t = 1.9153, df = 55.309, p-value = 0.06063
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -0.1710156  7.5710156
+## sample estimates:
+## mean of x mean of y 
+##  20.66333  16.96333
 ```
 
 The 95% confidence interval `[-0.1710156  7.5710156]` contains 0, which means that we can not really tell with this sample if the delivery method is relevant to the impact.
@@ -113,22 +176,50 @@ $$
 
 Let's do another independant group T test. The two groups we are looking at are no the ones who got 0.5mg versus those who got 1mg.
 
-```{r}
+
+```r
 mg05 <- ToothGrowth[ToothGrowth$dose == 0.5,]$len
 mg10 <- ToothGrowth[ToothGrowth$dose == 1.0,]$len
 ```
 
 Let's calculate the variances:
 
-```{r}
+
+```r
 var(mg05)
+```
+
+```
+## [1] 20.24787
+```
+
+```r
 var(mg10)
+```
+
+```
+## [1] 19.49608
 ```
 
 The variance are relatively similar, we can assume equality of variance.
 
-```{r}
+
+```r
 t.test(mg05, mg10, paired=FALSE, var.equal=TRUE)
+```
+
+```
+## 
+## 	Two Sample t-test
+## 
+## data:  mg05 and mg10
+## t = -6.4766, df = 38, p-value = 1.266e-07
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -11.983748  -6.276252
+## sample estimates:
+## mean of x mean of y 
+##    10.605    19.735
 ```
 
 The P-value is almost 0, this means that we can reject the null hypothesis that the dose level increase between 0.5mg and 1mg has no impact. Similarely, the 95% confidence doesn't include 0, so there is more than 95% chance that the dose level impacts the results.
@@ -146,21 +237,49 @@ $$
 
 Let's do another independant group T test. The two groups we are looking at are no the ones who got 2mg versus those who got 1mg (we already extracted thenm in the previous analysis).
 
-```{r}
+
+```r
 mg20 <- ToothGrowth[ToothGrowth$dose == 2.0,]$len
 ```
 
 Let's calculate the variances:
 
-```{r}
+
+```r
 var(mg10)
+```
+
+```
+## [1] 19.49608
+```
+
+```r
 var(mg20)
+```
+
+```
+## [1] 14.24421
 ```
 
 The variance are not similar, we will assume unequality of variance.
 
-```{r}
+
+```r
 t.test(mg10, mg20, paired=FALSE, var.equal=FALSE)
+```
+
+```
+## 
+## 	Welch Two Sample t-test
+## 
+## data:  mg10 and mg20
+## t = -4.9005, df = 37.101, p-value = 1.906e-05
+## alternative hypothesis: true difference in means is not equal to 0
+## 95 percent confidence interval:
+##  -8.996481 -3.733519
+## sample estimates:
+## mean of x mean of y 
+##    19.735    26.100
 ```
 
 The P-value is almost 0, this means that we can reject the null hypothesis that the dose level increase between 0.5mg and 1mg has no impact. Similarely, the 95% confidence doesn't include 0, so there is more than 95% chance that the dose level impacts the results.
