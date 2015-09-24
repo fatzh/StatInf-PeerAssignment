@@ -1,6 +1,7 @@
 ---
 title: "Statistical Inference"
 output: html_document
+graphics: yes
 ---
 
 ```{r global_options, include=FALSE}
@@ -23,7 +24,6 @@ First a quick look at the data:
 ```{r}
 glimpse(ToothGrowth)
 summary(ToothGrowth)
-levels(ToothGrowth$supp)
 unique(ToothGrowth$dose)
 ```
 
@@ -33,19 +33,17 @@ We can see that this dataset contains 60 observations on 3 variables :
 * supplement type (VC or OJ, that we will reference as Vitamin C and Orange Juice in this document)
 * dose in milligrams (0.5mg, 1mg or 2mg)
 
-The dose can only take 3 values, so we can convert it to a factor:
-
-```{r}
+The dose can only take 3 values, so we can convert it to a factor. The dataset is ready for further analysis.
+```{r, echo=FALSE}
 ToothGrowth$dose <- as.factor(ToothGrowth$dose)
 ```
-
-Now the dataset is ready for further analysis.
 
 ## Toothgrowth exploratory analysis
 
 An interesting view would be to display the relation between the tooth length and the dose for each supplement:
 
-```{r}
+
+```{r, echo=FALSE, fig.height=3.5, fig.align='center'}
 g <- ggplot(ToothGrowth, aes(x = dose, y = len, fill = supp))
 g <- g + geom_boxplot(aes(x = dose))
 g <- g + labs(title="Effect of supplement on tooth growth",
@@ -66,107 +64,70 @@ We can draw the following observations from this plot:
 
 ## Statistical inference
 
-Let's now look at the sample used to collect this data, and see if some assumptions we could draw by looking at the data are correct.
+Let's now look at the sample used to collect this data, and see if some assumptions we could draw by looking at the data are correct. The complete output of the tests performed as part of this analysis is provided in appendix.
 
-### Assumption 1 : The delivery method impacts the tooth growth
+### Hypothesis 1 : The delivery method impacts the tooth growth
 
-Let's first try to determin if the delivery method has an impact on the results. Let $H_{0}$ be the null hypothesis that it has no impact:
-
-$$
-H_{0} : \mu _{oj} = \mu _{vc}
-$$
+Let's first try to determin if the delivery method has an impact on the results. Let $H_{0}$ be the null hypothesis that it has no impact : $H_{0} : \mu _{oj} = \mu _{vc}$
 
 To compare the impact of each supplement, we can perform an independant group T test.
 
-```{r}
+```{r, echo=FALSE}
 oj <- ToothGrowth[ToothGrowth$supp == 'OJ',]$len
 vc <- ToothGrowth[ToothGrowth$supp == 'VC',]$len
+res <- t.test(oj, vc, paired=FALSE, var.equal=FALSE)
 ```
 
-Let's look at the variance of the 2 groups:
+Let's look at the variance of the 2 groups. The variance for the Orange Juice group is `r var(oj)` whereas the variance for the Vitamin C group is `r var(vc)`. The difference is not negligible, so we'll assume the 2 groups have unequal variances for the T test.
 
-```{r}
-var(oj)
-var(vc)
-```
+The 95% confidence interval [`r res$conf.int`] contains 0, which means that we can not really tell with this sample if the delivery method is relevant to the impact.
 
-The difference is not negligible, so we'll assume the 2 groups have unequal variances for the T test.
-
-```{r}
-t.test(oj, vc, paired=FALSE, var.equal=FALSE)
-```
-
-The 95% confidence interval `[-0.1710156  7.5710156]` contains 0, which means that we can not really tell with this sample if the delivery method is relevant to the impact.
-
-The P-value is `0.06063` which is too high at a significant level of 5%, we can't exclude our null hypothesis $H_{0}$, so it's possible, given this sample, that the delivery method has no effect on the teeth growth.
+The P-value is `r round(res$p.value, 6) ` which is too high at a significant level of 5%, we can't exclude our null hypothesis $H_{0}$, so it's possible, given this sample, that the delivery method has no effect on the teeth growth.
 
 *Conclusion: the delivery method has no proven impact on the teeth growth.*
 
-### Assumption 2 : The dose level impacts the tooth growth
+### Hypothesis 2 : The dose level impacts the tooth growth
 
 Now we can test if the dose level has an impact on the results. We will test the impact of 1mg versus 0.5mg, and 2mg versus 1mg.
 
-#### Assumption 2.1 : Increasing the dose level from 0.5mg to 1mg impacts the result
+#### Hypothesis 2.1 : Increasing the dose level from 0.5mg to 1mg impacts the result
 
-Our null hypothesis $H_{0}$ is that increasing the dose level has no impact:
+Our null hypothesis $H_{0}$ is that increasing the dose level has no impact: $H_{0} : \mu_{0.5mg} = \mu_{1mg}$
 
-$$
-H_{0} : \mu_{0.5mg} = \mu_{1mg}
-$$
+Let's perform another independant group T test. The two groups we are looking at are now the ones who got 0.5mg versus those who got 1mg.
 
-Let's do another independant group T test. The two groups we are looking at are no the ones who got 0.5mg versus those who got 1mg.
-
-```{r}
+```{r, echo=FALSE}
 mg05 <- ToothGrowth[ToothGrowth$dose == 0.5,]$len
 mg10 <- ToothGrowth[ToothGrowth$dose == 1.0,]$len
 ```
 
-Let's calculate the variances:
+The variance of the 0.5mg group is `r var(mg05)` and the variance of the 1.0mg is `r var(mg10)`. The variance are relatively similar, we can assume equality of variance.
 
-```{r}
-var(mg05)
-var(mg10)
+```{r, echo=FALSE}
+res <- t.test(mg05, mg10, paired=FALSE, var.equal=TRUE)
 ```
 
-The variance are relatively similar, we can assume equality of variance.
-
-```{r}
-t.test(mg05, mg10, paired=FALSE, var.equal=TRUE)
-```
-
-The P-value is almost 0, this means that we can reject the null hypothesis that the dose level increase between 0.5mg and 1mg has no impact. Similarely, the 95% confidence doesn't include 0, so there is more than 95% chance that the dose level impacts the results.
+The P-value is almost 0. This means that we can reject the null hypothesis that the dose level increase between 0.5mg and 1mg has no impact. Similarely, the 95% confidence interval [`r res$conf.int`] doesn't include 0, so there is more than 95% chance that the dose level impacts the results.
 
 *Conclusion: increasing the dose level from 0.5mg to 1mg has an impact on the teeth growth with 95% confidence.*
 
+#### Hypothesis 2.2 : Increasing the dose level from 1mg to 2mg impacts the result
 
-#### Assumption 2.2 : Increasing the dose level from 1mg to 2mg impacts the result
+Our null hypothesis $H_{0}$ is that increasing the dose level from 1mg to 2mg has no impact: $H_{0} : \mu_{1mg} = \mu_{2mg}$
 
-Our null hypothesis $H_{0}$ is that increasing the dose level from 1mg to 2mg has no impact:
+we will do another independant group T test with the two groups who received 1mg and 2mg respectively.
 
-$$
-H_{0} : \mu_{1mg} = \mu_{2mg}
-$$
-
-Let's do another independant group T test. The two groups we are looking at are no the ones who got 2mg versus those who got 1mg (we already extracted thenm in the previous analysis).
-
-```{r}
+```{r, echo=FALSE}
 mg20 <- ToothGrowth[ToothGrowth$dose == 2.0,]$len
 ```
 
-Let's calculate the variances:
+The variance of the 1.0mg group is `r var(mg10)` and the variance of the 2.0mg group is `r var(mg20)`. The variances are not similar, we will assume unequality of variance.
 
-```{r}
-var(mg10)
-var(mg20)
+```{r, echo=FALSE}
+res <- t.test(mg10, mg20, paired=FALSE, var.equal=FALSE)
 ```
 
-The variance are not similar, we will assume unequality of variance.
-
-```{r}
-t.test(mg10, mg20, paired=FALSE, var.equal=FALSE)
-```
-
-The P-value is almost 0, this means that we can reject the null hypothesis that the dose level increase between 0.5mg and 1mg has no impact. Similarely, the 95% confidence doesn't include 0, so there is more than 95% chance that the dose level impacts the results.
+The P-value is almost 0. This means that we can reject the null hypothesis that the dose level increase between 1mg and 2mg has no impact. Similarely, the 95% confidence interval [`r res$conf.int`] doesn't include 0, so there is more than 95% chance that the dose level impacts the results.
 
 *Conclusion: increasing the dosis from 1mg to 2mg has an impact on the teeth growth with 95% confidence.*
 
@@ -182,3 +143,36 @@ To summarize the result of the 3 T-tests performed on the given sample:
 
 * the Guinea pigs are randomly assigned to the groups receiving the Vitamin C or the Orange Juice.
 * the Guinea pigs choosen for the sample are representative of the population of the Guinea pigs.
+
+
+\newpage
+
+# Appendix
+
+## T-Tests
+
+### Assumption 1 : The delivery method impacts the tooth growth
+
+```{r}
+oj <- ToothGrowth[ToothGrowth$supp == 'OJ',]$len
+vc <- ToothGrowth[ToothGrowth$supp == 'VC',]$len
+t.test(oj, vc, paired=FALSE, var.equal=FALSE)
+```
+
+### Assumption 2 : The dose level impacts the tooth growth
+
+#### Assumption 2.1 : Increasing the dose level from 0.5mg to 1mg impacts the result
+
+```{r}
+mg05 <- ToothGrowth[ToothGrowth$dose == 0.5,]$len
+mg10 <- ToothGrowth[ToothGrowth$dose == 1.0,]$len
+t.test(mg05, mg10, paired=FALSE, var.equal=TRUE)
+```
+
+#### Assumption 2.2 : Increasing the dose level from 1mg to 2mg impacts the result
+
+```{r}
+mg10 <- ToothGrowth[ToothGrowth$dose == 1.0,]$len
+mg20 <- ToothGrowth[ToothGrowth$dose == 2.0,]$len
+t.test(mg10, mg20, paired=FALSE, var.equal=FALSE)
+```

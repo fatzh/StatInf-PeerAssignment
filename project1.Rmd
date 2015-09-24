@@ -1,6 +1,7 @@
 ---
 title: "Statistical Inference Project"
-output: pdf_document
+output: html_document
+graphics: yes
 ---
 
 ```{r global_options, include=FALSE}
@@ -27,39 +28,19 @@ f(x; \lambda) =\left\{\begin{matrix}
 \end{matrix}\right.
 $$
 
-For this exercise, we set $\lambda = 0.2$
+For this exercise, we set $\lambda = 0.2$.
 
-```{r}
+```{r, echo=FALSE}
 lambda <- 0.2
 ```
 
+The expected value $E[X] = \frac{1}{\lambda}$ is `r theoretical_mean <- 1/lambda; theoretical_mean`, this is the theoretical mean.
 
-The expected value is:
-
-$$
-E[X] = \frac{1}{\lambda}
-$$
-
-```{r}
-theoritical_mean <- 1/lambda
-theoritical_mean
-```
-
-And the variance is:
-
-$$
-Var [X] = \frac{1}{\lambda^{2}}
-$$
-
-```{r}
-theoritical_var <- 1 / lambda^2
-theoritical_var
-```
+And the variance $Var [X] = \frac{1}{\lambda^{2}}$ is `r theoretical_var <- 1 / lambda^2; theoretical_var`, this is the theoretical variance.
 
 ## Simulations
 
-I will investigate the distribution of averages of 40 exponentials by simulating 100 000 distributions of 40 exponentials and storing their means and their variances to see if they converge to the theoritical values.
-
+I will investigate the distribution of averages of 40 exponentials by simulating 100 000 distributions of 40 exponentials and storing their means and their variances to see if they converge to the theoretical values.
 
 ```{r, cache=TRUE}
 set.seed(123)
@@ -72,24 +53,33 @@ for (i in 1 : nb_obs) {
 }
 ```
 
-## Sample mean versus theoritical mean
+## Sample mean versus theoretical mean
 
-This plot shows the mean of the sample means converging to the theoritical mean (in red) as the number of simulations increases:
+The mean of the 100 000 sample means is `r mean(sample_means)`, which is pretty close to the theoretical mean of `r theoretical_mean`. This plot shows the mean of the sample means converging to the theoretical mean as the number of simulations increases.
 
 ```{r, cache=TRUE}
 cum_means <- cumsum(sample_means) / (1:nb_obs)
+```
+
+
+```{r, cache=TRUE, echo=FALSE, fig.height=3, fig.align='center'}
 g <- ggplot(data.frame(x=1:nb_obs, y=cum_means), aes(x=x, y=y))
-g <- g + geom_hline(yintercept = theoritical_mean, color="red")
-g <- g + geom_line(color="blue")
+g <- g + geom_line(aes(colour="Samples Mean"))
+g <- g + geom_hline(aes(yintercept = theoretical_mean, colour="Theoretical Mean"))
 g <- g + labs(title = "Mean of sample means as number of simulations increases",
               x = "Number of simulations",
               y = "Mean")
 g <- g + theme_bw()
+g <- g + scale_colour_manual("", 
+                      breaks = c("Theoretical Mean", "Samples Mean"),
+                      values = c("Theoretical Mean"="red", "Samples Mean"="blue"))
 g <- g + scale_x_log10()
 g
 ```
 
-## Sample variance versus theoritical variance
+## Sample variance versus theoretical variance
+
+The sample variance over the 100000 sample means is `r var(sample_means)`, which is far from the theoretical variance of `r theoretical_var`.
 
 The Central Limit Theorem tells us that with enough observations, the standard deviation of the means of the samples can be approximated by the sampling standard error ($SE$).
 
@@ -97,25 +87,37 @@ $$
 \sigma_{sample} \rightarrow SE = \sqrt{\frac{Var}{n}}
 $$
 
-In other words, we should see that with enough observations, the following should tend towards the theoritical variance:
+In other words, we should see that with enough simulations, the following should tend towards the theoretical variance. 
 
 $$
 \sigma_{sample}^{2} \times n  \rightarrow Var
 $$
 
+The plot below shows the variance of the samples and the variance os the samples adjusted as per the Central Limit Theorem, compared to the theoretical variance.
+
 ```{r, cache=TRUE}
+clt_vars <- NULL
 vars <- NULL
 # we calculate the variance of the means, starting with the first 2 means
 for (i in 2:nb_obs) {
-    vars <- c(vars, sd(sample_means[1:i])^2 * 40)
+    clt_vars <- c(clt_vars, var(sample_means[1:i]) * 40)
+    vars <- c(vars, var(sample_means[1:i]))
 }
+```
+
+
+```{r, cache=TRUE, echo=FALSE, fig.height=3, fig.align='center'}
 g2 <- ggplot(data.frame(x=1:(nb_obs-1), y=vars), aes(x=x, y=y))
-g2 <- g2 + geom_hline(yintercept = theoritical_var, color="red")
-g2 <- g2 + geom_line(color="blue")
+g2 <- g2 + geom_hline(aes(yintercept = theoretical_var, colour="Theoretical Var"))
+g2 <- g2 + geom_line(aes(colour="Samples Var"))
+g2 <- g2 + geom_line(data=data.frame(x=1:(nb_obs-1), y=clt_vars), aes(x=x, y=y, colour="CLT Var"))
 g2 <- g2 + labs(title = "Variance of the means as number of simulations increases",
                 x = "Number of simulations",
                 y = "Variance")
 g2 <- g2 + theme_bw()
+g2 <- g2 + scale_colour_manual("", 
+                      breaks = c("Theoretical Var", "Samples Var", "CLT Var"),
+                      values = c("Theoretical Var" = "red", "Samples Var"="blue", "CLT Var"="green"))
 g2 <- g2 + scale_x_log10()
 g2
 ```
@@ -126,9 +128,9 @@ The Central Limit Theorem also tells us that the distribution of the means of th
 
 The normal distribution should be of the form $N(\mu , \sigma ^{2}/n)$.
 
-To show this, let's draw the distribution of the means with different number of observations, along with the theoritical normal distribution:
+To show this, let's draw the distribution of the means with different number of observations, along with the theoretical normal distribution:
 
-```{r}
+```{r, echo=FALSE, fig.align='center'}
 data <- NULL
 # let's build the samples for 10, 100, 1000, 10000 and 100 000 observations
 data <- rbind(
@@ -138,17 +140,25 @@ data <- rbind(
     data.frame(obs=rep(10000, each=10000), x=sample_means[1:10000]),
     data.frame(obs=rep(100000, each=100000), x=sample_means[1:100000])
     )
+```
+
+
+```{r, echo=FALSE, fig.align='center', fig.height=4}
 g3 <- ggplot(data, x = x)
-g3 <- g3 + geom_histogram(aes(x = x, y=..density..), binwidth=.05)
+g3 <- g3 + geom_histogram(aes(x = x, y=..density.., colour="Samples distribution"), binwidth=.05)
 # plot normal distribution, with parameters as per the Central Limit Theorem
 g3 <- g3 + stat_function(fun = dnorm,
-                         color="red",
-                         args=list(mean=5, sd=sqrt(theoritical_var / 40)))
+                         aes(color="Normal distribution"),
+                         args=list(mean=5, sd=sqrt(theoretical_var / 40)))
 # plot panel plots by number of observations
 g3 <- g3 + facet_grid(. ~ obs)
+g3 <- g3 + scale_colour_manual("", 
+                      breaks = c("Samples distribution", "Normal distribution"),
+                      values = c("Samples distribution"="blue", "Normal distribution"="red"))
+g3 <- g3 + guides(color=guide_legend(override.aes=list(fill=NA)))
 g3
 ```
 
 ## Conclusion
 
-We can see that with enough observations, the distribution of the means of the samples is close to the normal distribution as given by the Central Limit Theorem (in red).
+We can see that with enough observations, the distribution of the means of the samples is close to the normal distribution as given by the Central Limit Theorem.
